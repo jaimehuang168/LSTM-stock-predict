@@ -8,20 +8,34 @@ class main:
         self.c = Canvas(self.master,bd=3,relief="ridge", width=450, height=300, bg='white')
         self.c.pack(side=LEFT)
         
-        Label(master,text="LSTM Predicting S&P500 price",fg="green",font=("",15,"bold")).pack(pady=10)
+        Label(master,text="LSTM Predicting S&P500 price",fg="black",font="Times 20 bold").pack(pady=10)
 
-        Button(master,font=("",15),fg="white",bg="red", text="load recent data", command=self.getAndDrawData).pack()       
-        Button(master,font=("",15),fg="white",bg="red", text="point by point predict", command=self.pbpPredict).pack()
-        Button(master,font=("",15),fg="white",bg="red", text="multi sequence predict", command=self.msPredict).pack()
-        Button(master,font=("",15),fg="white",bg="red", text="clean", command=self.clear).pack()
+        Button(master,font="Times 15",fg="white",bg="red", text="load recent data", command=self.getAndDrawData).pack()       
+        Button(master,font="Times 15",fg="white",bg="red", text="point by point predict", command=self.pbpPredict).pack()
+        Button(master,font="Times 15",fg="white",bg="red", text="multi sequence predict", command=self.msPredict).pack()
+        Button(master,font="Times 15",fg="white",bg="red", text="clean", command=self.clear).pack()
 
         # show the prediction
-        self.pr = Label(master,text="Prediction: None",fg="blue",font=("",20,"bold"))
+        self.pr = Label(master,text="Prediction: ",fg="blue",font="Times 20 bold")
         self.pr.pack(pady=20)
+        
+        # x axis and y axis
+        self.c.create_line([10, 295, 400, 295], fill='black')
+        self.c.create_text([415, 295],text="time")
+        self.c.create_line([10, 295, 10, 60], fill='black')
+        self.c.create_text([20, 50],text="price")
+
         
     def clear(self):
         self.c.delete('all')
         self.pr['text'] = "Prediction: "
+
+        # resume x axis and y axis
+        self.c.create_line([10, 295, 400, 295], fill='black')
+        self.c.create_text([415, 295],text="time")
+        self.c.create_line([10, 295, 10, 60], fill='black')
+        self.c.create_text([20, 50],text="price")
+
 
     def getAndDrawData(self):
         # to be implemented : retrieve recent S&P 500 data for predict, and then draw it
@@ -37,7 +51,7 @@ class main:
             p[:] = list(map(lambda x: 2900 - x, p))
             for i in range(10):
                 # insert x coordinate for drawing
-                p.insert(2*i, 30*i)
+                p.insert(2*i, 20+30*i)
 
         # draw the lines and labels for each price
         self.c.create_line(self.open_price, fill='red')
@@ -55,7 +69,7 @@ class main:
         predict = []
         for i in range(len(self.open_price)):
             if i % 2 == 0:
-                predict.append(self.open_price[i]+50)
+                predict.append(self.open_price[i]+20)
             else:
                 predict.append((self.open_price[i] + self.high_price[i] + self.low_price[i] + self.close_price[i])/4)
         self.c.create_line(predict, fill='black')
