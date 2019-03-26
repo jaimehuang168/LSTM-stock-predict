@@ -10,11 +10,12 @@
 		"normalise": true
 	},
 	"training": {
-		"epochs": 2,
+		"epochs": 15,
 		"batch_size": 32
 	},
 	"model": {
 		"loss": "mse",
+        "accuracy": "",
 		"optimizer": "adam",
 		"save_dir": "saved_models",
 		"layers": [

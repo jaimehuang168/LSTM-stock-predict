@@ -8,8 +8,10 @@ import json
 import time
 import math
 import matplotlib.pyplot as plt
+import pickle
 from core.data_processor import DataLoader
 from core.model import Model
+from sklearn.metrics import r2_score
 
 
 def plot_results(predicted_data, true_data):
@@ -22,6 +24,7 @@ def plot_results(predicted_data, true_data):
 
 
 def plot_results_multiple(predicted_data, true_data, prediction_len):
+    print("plotting...")
     fig = plt.figure(facecolor='white')
     ax = fig.add_subplot(111)
     ax.plot(true_data, label='True Data')
@@ -85,6 +88,13 @@ def main():
 
     plot_results_multiple(predictions, y_test, configs['data']['sequence_length'])
     # plot_results(predictions, y_test)
+
+    # Save model
+    pickle.dump(model, open("model_v1.pkl", 'wb'))
+    #print("The R2 score on the Test set is:\t{:0.3f}".format(r2_score(y_test, predictions)))
+    #model.evaluate(x_test, y_test)
+    
+    
 
 
 if __name__ == '__main__':
