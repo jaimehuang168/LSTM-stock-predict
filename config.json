@@ -15,7 +15,6 @@
 	},
 	"model": {
 		"loss": "mse",
-        "accuracy": "",
 		"optimizer": "adam",
 		"save_dir": "saved_models",
 		"layers": [

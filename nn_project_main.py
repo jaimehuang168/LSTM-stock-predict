@@ -51,6 +51,7 @@ def plot_results_multiple(predicted_data, true_data, prediction_len):
     plt.show()
 
 
+# load the configs
 configs = json.load(open('config.json', 'r'))
 if not os.path.exists(configs['model']['save_dir']): os.makedirs(configs['model']['save_dir'])
 
@@ -60,26 +61,36 @@ data = DataLoader(
     configs['data']['columns']
 )
 
-model = Model()
-model.build_model(configs)
+# point by point model
+model_PBP = Model()
+model_PBP.build_model(configs)
+
+# multi sequence model
+model_MS = Model()
+model_MS.build_model(configs)
+
 x, y = data.get_train_data(
     seq_len=configs['data']['sequence_length'],
     normalise=configs['data']['normalise']
 )
 
-'''
-# in-memory training
-model.train(
-		x,
-		y,
-		epochs = configs['training']['epochs'],
-		batch_size = configs['training']['batch_size'],
-		save_dir = configs['model']['save_dir']
-)
-'''
 # out-of memory generative training
 steps_per_epoch = math.ceil((data.len_train - configs['data']['sequence_length']) / configs['training']['batch_size'])
-model.train_generator(
+
+# start training each model
+model_PBP.train_generator(
+    data_gen=data.generate_train_batch(
+        seq_len=configs['data']['sequence_length'],
+        batch_size=configs['training']['batch_size'],
+        normalise=configs['data']['normalise']
+    ),
+    epochs=configs['training']['epochs'],
+    batch_size=configs['training']['batch_size'],
+    steps_per_epoch=steps_per_epoch,
+    save_dir=configs['model']['save_dir']
+)
+
+model_MS.train_generator(
     data_gen=data.generate_train_batch(
         seq_len=configs['data']['sequence_length'],
         batch_size=configs['training']['batch_size'],
@@ -96,17 +107,54 @@ x_test, y_test = data.get_test_data(
     normalise=configs['data']['normalise']
 )
 
-# predictions = model.predict_sequences_multiple(x_test, configs['data']['sequence_length'], configs['data']['sequence_length'])
-# predictions = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
-predictions = model.predict_point_by_point(x_test)
 
-# plot_results_multiple(predictions, y_test, configs['data']['sequence_length'])
-plot_results(predictions, y_test)
+# start predicting
+# predictions = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
+predictions_PBP = model.predict_point_by_point(x_test)
+predictions_MS = model.predict_sequences_multiple(x_test, configs['data']['sequence_length'], configs['data']['sequence_length'])
+
+
+#plot_results(predictions_PBP, y_test)
+#plot_results_multiple(predictions_MS, y_test, configs['data']['sequence_length'])
 
 # Save model
-pickle.dump(model, open("model_PBP_v1.pkl", 'wb'))
+pickle.dump(model_PBP, open("model_PBP.pkl", 'wb'))
+pickle.dump(model_MS, open("model_MS.pkl", 'wb'))
 #print("The R2 score on the Test set is:\t{:0.3f}".format(r2_score(y_test, predictions)))
 #model.evaluate(x_test, y_test)
+
+# plotting point-by-point predictions with/without denormalization
+
+# denormalize point by point
+x_test_true, y_test_true =data.get_test_data(
+    seq_len=configs['data']['sequence_length'],
+    normalise=False
+)
+
+
+predictions_PBP_true = []
+for i, p in enumerate(predictions_PBP):
+  predictions_PBP_true.append((1+p) * data.data_test[i][0])
+  
+# calculate mse
+sigma = 0
+for i in range(650):
+  sigma += (y_test_true[i][0] - predictions_PBP_true[i]) ** 2
+test_loss = model_PBP.model.evaluate(x_test, y_test)
+print("test loss :", test_loss)
+print("denormalized test mse loss:", sigma/len(predictions_PBP_true))
+
+print("before de-normalization :")
+plot_results(predictions_PBP, y_test)
+fig = plt.figure(facecolor='white')
+ax = fig.add_subplot(111)
+print("after de-normalization :")
+ax.plot(y_test_true, label='True Data')
+plt.plot(predictions_true, label='Prediction')
+plt.legend()
+plt.show()
+
+# plotting multi-sequence predictions with/without denormalization
 
 import numpy as np
 def denormalise_windows(original_data, window_data, single_window=False):
@@ -125,7 +173,6 @@ def denormalise_windows(original_data, window_data, single_window=False):
   return denormalised_data
 
 def plot_results_multiple2(predicted_data, true_data, prediction_len, height, width):
-    print("plotting!!!")
     fig = plt.figure(figsize=(8, width), facecolor='white')
     ax = fig.add_subplot(111)
     ax.plot(true_data, label='True Data')
@@ -143,38 +190,19 @@ x_test_true, y_test_true =data.get_test_data(
     normalise=False
 )
 
-predictions_true = denormalise_windows(data.data_test, predictions, False)
+predictions_MS_true = denormalise_windows(data.data_test, predictions_MS, False)
 #print(len(data.data_test))
 
-plot_results_multiple2(predictions, y_test, configs['data']['sequence_length'], 5, 9)
-
-plot_results_multiple2(predictions_true, y_test_true, configs['data']['sequence_length'], 8, 7)
-
-#model.evaluate(x_test, y_test)
-#print([method_name for method_name in dir(model)
-                  #if callable(getattr(model, method_name))])
-#data.yo()
-print(len(y_test_true))
+# calculate mse
 sigma = 0
 for i in range(650):
-  sigma += (y_test_true[i][0] - predictions_true[i//50][i%50]) ** 2
-test_loss = model.model.evaluate(x_test, y_test)
+  sigma += (y_test_true[i][0] - predictions_MS_true[i//50][i%50]) ** 2
+test_loss = model_MS.model.evaluate(x_test, y_test)
 print("test loss :", test_loss)
 print("denormalized test mse loss:", sigma/650)
 
-# denormalize point by point
-x_test_true, y_test_true =data.get_test_data(
-    seq_len=configs['data']['sequence_length'],
-    normalise=False
-)
 
-print(data.data_test)
-predictions_true = []
-for i, p in enumerate(predictions):
-  predictions_true.append((1+p) * data.data_test[i][0])
-fig = plt.figure(facecolor='white')
-ax = fig.add_subplot(111)
-ax.plot(y_test_true, label='True Data')
-plt.plot(predictions_true, label='Prediction')
-plt.legend()
-plt.show()
+print("before de-normalization :")
+plot_results_multiple2(predictions_MS, y_test, configs['data']['sequence_length'], 5, 9)
+print("after de-normalization :")
+plot_results_multiple2(predictions_MS_true, y_test_true, configs['data']['sequence_length'], 8, 7)

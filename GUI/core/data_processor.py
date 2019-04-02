@@ -13,6 +13,29 @@ class DataLoader():
         self.len_train  = len(self.data_train)
         self.len_test   = len(self.data_test)
         self.len_train_windows = None
+    
+    def get_custom_data(self, filename, seq_len, normalise, cols, custom_len):
+        dataframe = pd.read_csv(filename)
+        d = dataframe.get(cols).values[-custom_len:]
+        self.data_test = d
+        
+        data_windows = []
+        for i in range(custom_len - seq_len):
+            data_windows.append(d[i:i+seq_len])
+        
+        data_windows = np.array(data_windows).astype(float)
+        data_windows = self.normalise_windows(data_windows, single_window=False) if normalise else data_windows
+        
+        x = data_windows[:, :-1]
+        y = data_windows[:, -1, [0]]
+        
+        if normalise == False:
+            self.true_full =y[:]
+            for i in range(seq_len):
+                self.true_full = np.append([[x[i][0][0]]], self.true_full, axis=0)
+        
+        
+        return x,y
 
     def get_test_data(self, seq_len, normalise):
         '''
