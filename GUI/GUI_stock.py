@@ -58,7 +58,8 @@ class main:
         # read csv file
         self.filename = filedialog.askopenfilename()
         self.dataloader = DataLoader(self.filename, ["Close","Volume","Open", "High","Low","Rocr100","Plus_dm"])
-        
+
+        print(self.filename)
         # load true data without normalise
         seq_len = int(self.scale2.get())
         x_test_true, self.y_test_true =self.dataloader.get_test_data(seq_len, normalise=False)
@@ -83,7 +84,6 @@ class main:
 
     def pbpPredict(self):
         # point by point predict
-        self.plotTrueData()
         seq_len = int(self.scale2.get())
         # load the model based on the asked predict len
         if seq_len == 50:
@@ -96,6 +96,7 @@ class main:
         # reload data based on seq_len
         self.x_test, self.y_test = self.dataloader.get_test_data(seq_len, normalise=True)
         x_test_true, self.y_test_true =self.dataloader.get_test_data(seq_len, normalise=False)
+        self.plotTrueData()
         
         print("successfully loaded point-by-point model")
         self.predictions = model.predict_point_by_point(self.x_test)
@@ -117,7 +118,6 @@ class main:
     def msPredict(self):
         # multi sequence predict
         # load the model
-        self.plotTrueData()
         seq_len = int(self.scale2.get())
         
         # load the model based on the asked predict len
@@ -135,8 +135,10 @@ class main:
 
         # make predictions with len=seq_len
         self.predictions = model.predict_sequences_multiple(self.x_test, seq_len,seq_len)
-        predictions_true = self.dataloader.denormalise_windows(seq_len, self.dataloader.data_test, self.predictions, False)
+        predictions_true = self.dataloader.denormalise_windows(seq_len, self.dataloader.data_test , self.predictions, False)
 
+        self.plotTrueData()
+        self.ax.grid()
         # seperate each sequence
         for i, p in enumerate(predictions_true):
             if i * seq_len >= int(self.scale1.get()):
@@ -144,7 +146,7 @@ class main:
             padding = [None for _ in range(i * seq_len)]
             self.ax.plot(padding+p, label='Multi-Sequence Prediction')
             self.graph.draw()
-            
+        
         loss = self.calculateMSELoss(self.y_test_true, predictions_true, "MS")
         loss2 = self.calculateMAELoss(self.y_test_true, predictions_true, "MS")
         self.pr['text'] = "MAE Loss :" + str(loss2) + ", MSE Loss :" + str(loss)
@@ -156,7 +158,6 @@ class main:
         seq_len = int(self.scale2.get())
         if mode == "MS":
             for i in range(custom_len):
-                print(i, true[i][0], pred[i//seq_len][i%seq_len])
                 sigma += (true[i][0] - pred[i//seq_len][i%seq_len]) ** 2
             return sigma / custom_len
         elif mode=="PBP":
@@ -174,7 +175,7 @@ class main:
             return sigma / custom_len
         elif mode=="PBP":
             for i in range(custom_len):
-                sigma += abs(true[i][0] - pred[i+seq_len])
+                sigma += abs(true[i][0] - pred[i])
             return sigma / custom_len
         
 

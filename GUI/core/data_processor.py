@@ -9,7 +9,6 @@ class DataLoader():
         dataframe = pd.read_csv(filename)
         self.data_test  = dataframe.get(cols).values[50:]
         self.len_test = len(self.data_test)
-        print('len_test', self.len_test)
     
     def get_custom_data(self, filename, seq_len, normalise, cols, custom_len):
         dataframe = pd.read_csv(filename)

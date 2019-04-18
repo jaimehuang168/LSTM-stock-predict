@@ -19,7 +19,7 @@ class DataAugmentation():
         volume = self.dataframe.get('Volume').values
        
         # calculate indicators from raw data
-        timeperiod = 50
+        timeperiod = 25
         adx = talib.ADX(high, low, close, timeperiod)
         adxr = talib.ADXR(high, low, close, timeperiod)
         aroonosc = talib.AROONOSC(high, low, timeperiod)
@@ -61,12 +61,13 @@ class DataAugmentation():
                         nans += 1
                 # print(key, nans)
         #print(len(output['Adx']))
-        # output.to_csv('sp500_beta.csv', index=False)
-        output.to_csv('sp500_2018end_beta.csv', index=False)
+        output.to_csv('sp500_beta.csv', index=False)
+        # output.to_csv('sp500_latest_25_beta.csv', index=False)
+        # print(output['Date'][4697-706])
         
         
 
 
 # d = DataAugmentation('sp500.csv')
-d = DataAugmentation('sp500_2018end.csv')
+d = DataAugmentation('sp500.csv')
 d.getIndicators()
