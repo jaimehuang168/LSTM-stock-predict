@@ -50,7 +50,7 @@ class DataAugmentation():
                                'Roc':roc, 'Rocp':rocp, 'Rocr':rocr, 'Rocr100':rocr100, 'Rsi':rsi,
                                'Trix':trix, 'Willr':willr})
         
-        # fill missing parts by mean
+        # should avoid nan part for training
         for key, value in output.items():
             # if key != 'Date' and np.isnan(value[0]):
                 # output[key].fillna((output[key].mean()), inplace=True)
@@ -59,15 +59,14 @@ class DataAugmentation():
                 for v in value:
                     if np.isnan(v):
                         nans += 1
-                print(key, nans)
-        print(output['Mom'])
-        print('dondayo!')
-        print(output['Cci'])
+                # print(key, nans)
         #print(len(output['Adx']))
-        output.to_csv('sp500_beta.csv', index=False)
+        # output.to_csv('sp500_beta.csv', index=False)
+        output.to_csv('sp500_2018end_beta.csv', index=False)
         
         
 
 
-d = DataAugmentation('sp500.csv')
+# d = DataAugmentation('sp500.csv')
+d = DataAugmentation('sp500_2018end.csv')
 d.getIndicators()

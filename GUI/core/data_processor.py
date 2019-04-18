@@ -5,14 +5,11 @@ import pandas as pd
 class DataLoader():
     """A class for loading and transforming data for the lstm model"""
 
-    def __init__(self, filename, split, cols):
+    def __init__(self, filename, cols):
         dataframe = pd.read_csv(filename)
-        i_split = int(len(dataframe) * split)
-        self.data_train = dataframe.get(cols).values[:i_split]
-        self.data_test  = dataframe.get(cols).values[i_split:]
-        self.len_train  = len(self.data_train)
-        self.len_test   = len(self.data_test)
-        self.len_train_windows = None
+        self.data_test  = dataframe.get(cols).values[50:]
+        self.len_test = len(self.data_test)
+        print('len_test', self.len_test)
     
     def get_custom_data(self, filename, seq_len, normalise, cols, custom_len):
         dataframe = pd.read_csv(filename)
@@ -105,23 +102,18 @@ class DataLoader():
             normalised_window = np.array(normalised_window).T # reshape and transpose array back into original multidimensional format
             normalised_data.append(normalised_window)
         return np.array(normalised_data)
-    
-    def yo(self):
-        print("yo!")
 
-    def denormalise_windows(self, original_data, window_data, single_window=False):
+    def denormalise_windows(self, seq_len, original_data, window_data, single_window=False):
         '''De-Normalise windows'''
         denormalised_data = []
         window_data = np.array(window_data).astype(float)
         window_data = [window_data] if single_window else window_data
         for i, window in enumerate(window_data):
             denormalised_window = []
-            p0 = original_data[i*50][0]
+            p0 = original_data[i*seq_len][0]
             for col_i in window:
                 denormalised_col = (col_i+1) * p0
                 denormalised_window.append(denormalised_col)
             denormalised_data.append(denormalised_window)
         return denormalised_data
 
-#print([method_name for method_name in dir(DataLoader)
-                  #if callable(getattr(DataLoader, method_name))])

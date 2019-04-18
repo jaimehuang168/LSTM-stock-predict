@@ -24,8 +24,8 @@ class main:
         self.scale1 = Scale(master, orient = HORIZONTAL, label="used data len:", from_=50, to=650, resolution=50)
         self.scale1.pack(anchor = CENTER)
         
-        self.scale2 = Scale(master, orient = HORIZONTAL, label="prediction len:", from_=5, to=50, resolution=5)
-        #self.scale2.pack(anchor = CENTER)
+        self.scale2 = Scale(master, orient = HORIZONTAL, label="prediction len:", from_=25, to=50, resolution=25)
+        self.scale2.pack(anchor = CENTER)
         
          
         
@@ -36,55 +36,46 @@ class main:
         Button(master,font="Times 15",text="multi sequence predict", command=self.msPredict).pack()
         Button(master,font="Times 15",text="clean", command=self.clear).pack()
         
-        # show the prediction
-        self.pr = Label(master,text="MSE Loss : ",fg="blue",font="Times 20 bold")
+        # show the performance
+        self.pr = Label(master,text="MAE Loss :    , MSE Loss :",fg="blue",font="Times 20 bold")
         self.pr.pack(pady=20)
-        
+
+        # plot empty figure
         self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
         
         self.graph = FigureCanvasTkAgg(self.fig, master=root)
         self.graph.get_tk_widget().pack(side="top",fill='both',expand=True)
         
-        
-        
     def clear(self):
         self.ax.cla()
         self.ax.grid()
         self.graph.draw()
         print("clear!")
-        self.pr['text'] = "MSE Loss : "
+        self.pr['text'] = "MAE Loss :    , MSE Loss :"
 
     def openfile(self):
         # read csv file
         self.filename = filedialog.askopenfilename()
-        self.dataloader = DataLoader(self.filename, 0.85, ["Close","Volume"])
-    
-        self.x_test, self.y_test = self.dataloader.get_test_data(seq_len=50, normalise=True)
+        self.dataloader = DataLoader(self.filename, ["Close","Volume","Open", "High","Low","Rocr100","Plus_dm"])
         
         # load true data without normalise
-        x_test_true, self.y_test_true =self.dataloader.get_test_data(seq_len=50, normalise=False)
+        seq_len = int(self.scale2.get())
+        x_test_true, self.y_test_true =self.dataloader.get_test_data(seq_len, normalise=False)
         print("load the data successfully")  
-        
-        self.scale1.set(650)
+
+        # make sure the data len is valid
+        self.scale1.configure(to=self.dataloader.len_test - 50)
+        self.scale1.set(self.dataloader.len_test - 50)
         self.ax.cla()
         self.ax.grid()
         self.ax.plot(self.y_test_true, label='True Data')
         self.graph.draw()
     
-    def setCustomData(self):
+    def plotTrueData(self):
         self.clear()
-        
-        custom_len = int(self.scale1.get())
-        seq_len = int(self.scale2.get())
-        # todo : change 50 to seq_len
-        seq_len = 50
-        self.x_test, self.y_test = self.dataloader.get_custom_data(self.filename, seq_len, True, ["Close","Volume"], custom_len)
-        
-        # load true data without normalise
-        x_test_true, self.y_test_true =self.dataloader.get_custom_data(self.filename, seq_len, False, ["Close","Volume"], custom_len)
         self.ax.grid()
-        self.ax.plot(self.dataloader.true_full, label='True Data')
+        self.ax.plot(self.y_test_true[:self.scale1.get()], label='True Data')
         self.graph.draw()
         print("update custom data successfully")  
         
@@ -92,62 +83,99 @@ class main:
 
     def pbpPredict(self):
         # point by point predict
-        self.setCustomData()
-        #seq_len = int(self.scale2.get())
-        seq_len = 50
-        with open("model_PBP.pkl", 'rb') as file:  
-            model = pickle.load(file)
+        self.plotTrueData()
+        seq_len = int(self.scale2.get())
+        # load the model based on the asked predict len
+        if seq_len == 50:
+            with open("models/improved_PBP_50.pkl", 'rb') as file:  
+                model = pickle.load(file)
+        elif seq_len == 25:
+            with open("models/improved_PBP_25.pkl", 'rb') as file:  
+                model = pickle.load(file)
+
+        # reload data based on seq_len
+        self.x_test, self.y_test = self.dataloader.get_test_data(seq_len, normalise=True)
+        x_test_true, self.y_test_true =self.dataloader.get_test_data(seq_len, normalise=False)
+        
         print("successfully loaded point-by-point model")
         self.predictions = model.predict_point_by_point(self.x_test)
         print("done predicting using PBP model")
-        predictions_true = [None] * seq_len
+
+        # denormalize
+        predictions_true = []
         for i, p in enumerate(self.predictions):
             predictions_true.append((1+p) * self.dataloader.data_test[i][0])
 
         self.ax.plot(predictions_true, label='Point by Point Prediction')
         self.graph.draw()
-            
-        loss = self.calculateLoss(self.y_test_true, predictions_true, "PBP")
-        self.pr['text'] = "MSE Loss :" + str(loss)
+
+        loss = self.calculateMSELoss(self.y_test_true, predictions_true, "PBP")
+        loss2 = self.calculateMAELoss(self.y_test_true, predictions_true, "PBP")
+        self.pr['text'] = "MAE Loss :" + str(loss2) + ", MSE Loss :" + str(loss)
+
 
     def msPredict(self):
         # multi sequence predict
         # load the model
-        self.setCustomData()
+        self.plotTrueData()
+        seq_len = int(self.scale2.get())
         
-        with open("model_MS.pkl", 'rb') as file:  
-            model = pickle.load(file)
+        # load the model based on the asked predict len
+        if seq_len == 50:
+            with open("models/improved_MS_50.pkl", 'rb') as file:  
+                model = pickle.load(file)
+        elif seq_len == 25:
+            with open("models/improved_MS_25.pkl", 'rb') as file:  
+                model = pickle.load(file)
         print("succefully loaded MS model")
-        #seq_len = int(self.scale2.get())
-        seq_len = 50
-        self.predictions = model.predict_sequences_multiple(self.x_test, 50,50)
-        print("done predicting using multi-sequence model")
-        predictions_true = self.dataloader.denormalise_windows(self.dataloader.data_test, self.predictions, False)
+
+        # reload data based on seq_len
+        self.x_test, self.y_test = self.dataloader.get_test_data(seq_len, normalise=True)
+        x_test_true, self.y_test_true =self.dataloader.get_test_data(seq_len, normalise=False)
+
+        # make predictions with len=seq_len
+        self.predictions = model.predict_sequences_multiple(self.x_test, seq_len,seq_len)
+        predictions_true = self.dataloader.denormalise_windows(seq_len, self.dataloader.data_test, self.predictions, False)
 
         # seperate each sequence
         for i, p in enumerate(predictions_true):
-            padding = [None for _ in range((i+1) * seq_len)]
+            if i * seq_len >= int(self.scale1.get()):
+                break
+            padding = [None for _ in range(i * seq_len)]
             self.ax.plot(padding+p, label='Multi-Sequence Prediction')
             self.graph.draw()
             
-        loss = self.calculateLoss(self.y_test_true, predictions_true, "MS")
-        self.pr['text'] = "MSE Loss :" + str(loss)
+        loss = self.calculateMSELoss(self.y_test_true, predictions_true, "MS")
+        loss2 = self.calculateMAELoss(self.y_test_true, predictions_true, "MS")
+        self.pr['text'] = "MAE Loss :" + str(loss2) + ", MSE Loss :" + str(loss)
         
 
-    def calculateLoss(self, true, pred, mode):
+    def calculateMSELoss(self, true, pred, mode):
         sigma = 0
-        # to be update : range
         custom_len = int(self.scale1.get())
         seq_len = int(self.scale2.get())
-        seq_len = 50
         if mode == "MS":
-            for i in range(custom_len-seq_len):
-                sigma += (true[i][0] - pred[i//50][i%50]) ** 2
-            return sigma / len(true)
+            for i in range(custom_len):
+                print(i, true[i][0], pred[i//seq_len][i%seq_len])
+                sigma += (true[i][0] - pred[i//seq_len][i%seq_len]) ** 2
+            return sigma / custom_len
         elif mode=="PBP":
-            for i in range(custom_len-seq_len):
-                sigma += (true[i][0] - pred[i+seq_len]) ** 2
-            return sigma / len(true)
+            for i in range(custom_len):
+                sigma += (true[i][0] - pred[i]) ** 2
+            return sigma / custom_len
+
+    def calculateMAELoss(self, true, pred, mode):
+        sigma = 0
+        custom_len = int(self.scale1.get())
+        seq_len = int(self.scale2.get())
+        if mode == "MS":
+            for i in range(custom_len):
+                sigma += abs(true[i][0] - pred[i//seq_len][i%seq_len])            
+            return sigma / custom_len
+        elif mode=="PBP":
+            for i in range(custom_len):
+                sigma += abs(true[i][0] - pred[i+seq_len])
+            return sigma / custom_len
         
 
 if __name__ == "__main__":
