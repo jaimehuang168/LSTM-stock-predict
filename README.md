@@ -18,7 +18,7 @@ Install requirements.txt file to make sure correct versions of libraries are bei
 * Keras 2.2.2
 * Matplotlib 2.2.2
   
-  To run the GUI, install these dependencies first:
+To run the GUI, install these dependencies first:
 
 * Python3
 * Python3-tk
@@ -29,5 +29,5 @@ Install requirements.txt file to make sure correct versions of libraries are bei
 
 Output for improved stock market multi-sequence predictions:
 
-![Output for latest S&P 500 data](https://github.com/joeychang0204/LSTM-stock-predict/pictures/improved_MS.png)
+![Output for latest S&P 500 data](https://github.com/joeychang0204/LSTM-stock-predict/blob/master/pictures/improved_MS.png)
 
