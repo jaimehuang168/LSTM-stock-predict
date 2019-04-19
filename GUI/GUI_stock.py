@@ -24,7 +24,7 @@ class main:
         self.scale1 = Scale(master, orient = HORIZONTAL, label="used data len:", from_=50, to=650, resolution=50)
         self.scale1.pack(anchor = CENTER)
         
-        self.scale2 = Scale(master, orient = HORIZONTAL, label="prediction len:", from_=25, to=50, resolution=25)
+        self.scale2 = Scale(master, orient = HORIZONTAL, label="predict len:", from_=25, to=50, resolution=25)
         self.scale2.pack(anchor = CENTER)
         
          

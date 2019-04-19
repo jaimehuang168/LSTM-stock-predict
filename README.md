@@ -1,10 +1,12 @@
-# LSTM Neural Network for Time Series Prediction
+# LSTM Neural Network for Stock Market Prediction
 
-LSTM built using the Keras Python package to predict time series steps and sequences. Includes sine wave and stock market data.
+Predicting stock market's price using LSTM.
 
-[Full article write-up for this code](https://www.altumintelligence.com/articles/a/Time-Series-Prediction-Using-LSTM-Deep-Neural-Networks)
+[Baseline for this code](https://github.com/jaungiers/LSTM-Neural-Network-for-Time-Series-Prediction)
 
-[Video on the workings and usage of LSTMs and run-through of this code](https://www.youtube.com/watch?v=2np77NOdnwk)
+[GUI Demo of the neural network](https://www.youtube.com/watch?v=Nw0TjmfzWb8)
+
+[TA-lib for feature extraction](https://github.com/mrjbq7/ta-lib)
 
 ## Requirements
 
@@ -15,11 +17,17 @@ Install requirements.txt file to make sure correct versions of libraries are bei
 * Numpy 1.15.0
 * Keras 2.2.2
 * Matplotlib 2.2.2
+  
+  To run the GUI, install these dependencies first:
 
-Output for sine wave sequential prediction:
+* Python3
+* Python3-tk
+* TensorFlow
+* Pandas
+* Matplotlib
+* Keras
 
-![Output for sin wave sequential prediction](https://www.altumintelligence.com/assets/time-series-prediction-using-lstm-deep-neural-networks/sinwave_full_seq.png)
+Output for improved stock market multi-sequence predictions:
 
-Output for stock market multi-dimensional multi-sequential predictions:
+![Output for latest S&P 500 data](https://github.com/joeychang0204/LSTM-stock-predict/pictures/improved_MS.png)
 
-![Output for stock market multiple sequential predictions](https://www.altumintelligence.com/assets/time-series-prediction-using-lstm-deep-neural-networks/sp500_multi_2d.png)
